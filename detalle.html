@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Detalle - Ploploxz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;color:white;font-family:'Inter',sans-serif;overflow-x:hidden}
+.hero{position:relative;min-height:100vh;overflow:hidden}
+.hero-bg{position:absolute;inset:0;background-size:cover;background-position:center;transform:scale(1.08);animation:bgZoom 18s ease-in-out infinite alternate}
+.hero-gradient{position:absolute;inset:0;background:linear-gradient(to top,#000 8%,rgba(0,0,0,.1) 45%),linear-gradient(to right,rgba(0,0,0,.88) 0%,rgba(0,0,0,.2) 60%);z-index:1}
+@keyframes bgZoom{from{transform:scale(1.05)}to{transform:scale(1.15)}}
+.content{position:relative;z-index:2;padding:40px 22px 90px;display:flex;align-items:flex-end;min-height:100vh}
+.info{max-width:650px;min-width:0;overflow:hidden}
+.poster{width:190px;border-radius:22px;margin-bottom:24px;box-shadow:0 25px 50px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.08)}
+.title{font-size:clamp(2.5rem,5vw,4.5rem);font-weight:800;line-height:1;margin-bottom:18px;overflow-wrap:anywhere;word-break:break-word}
+.meta{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px}
+.meta span{background:rgba(255,255,255,.08);padding:11px 18px;border-radius:999px;font-size:14px}
+.description{color:#ddd;line-height:1.7;margin-bottom:28px;max-height:160px;overflow-y:auto;padding-right:8px}
+.genres{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:28px}
+.genres span{padding:9px 16px;background:rgba(179,0,0,.15);border:1px solid rgba(255,0,0,.2);border-radius:999px;font-size:13px;color:#ffb3b3}
+.buttons{display:flex;flex-wrap:wrap;gap:14px;max-width:100%;overflow:hidden}
+.buttons button,.buttons select{border:none;padding:15px 22px;border-radius:18px;font-weight:700;cursor:pointer;font-size:15px}
+select.secondary{outline:none;appearance:none;-webkit-appearance:none;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.primary{background:#b30000;color:white}
+.secondary{background:rgba(255,255,255,.08);color:white}
+.player-section{padding:20px;margin-top:-40px;position:relative;z-index:5}
+.player{width:100%;max-width:1200px;margin:auto;border-radius:24px;overflow:hidden;background:#111}
+.player iframe{width:100%;height:80vh;border:none}
+.recommendations{padding:40px 20px}
+.recommendations h2{font-size:28px;margin-bottom:20px}
+.recommendations-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.rec-card{text-decoration:none;color:white}
+.rec-card img{width:100%;border-radius:14px;aspect-ratio:2/3;object-fit:cover}
+.rec-card span{display:block;margin-top:8px;font-size:14px}
+@media(max-width:768px){
+.poster{width:160px}
+.buttons{flex-direction:column}
+.buttons button{width:100%}
+.player iframe{height:35vh}
+}
+</style>
+</head>
+<body>
+
+<div id="loading">Cargando...</div>
+
+<div id="detailPage" style="display:none;">
+<section class="hero">
+<div id="heroBg" class="hero-bg"></div>
+<div class="hero-gradient"></div>
+<div class="content">
+<div class="info">
+<img id="poster" class="poster" src="">
+<h1 id="title" class="title"></h1>
+<div id="meta" class="meta"></div>
+<p id="overview" class="description"></p>
+<div id="genres" class="genres"></div>
+<div class="buttons">
+<button id="playBtn" class="primary">▶ Ver Online</button>
+<button id="favoriteBtn" class="favorite-btn">🤍 Agregar a Mi Lista</button>
+<select id="seasonSelector" class="secondary" style="display:none"></select>
+<select id="episodeSelector" class="secondary" style="display:none"></select>
+</div>
+</div>
+</div>
+</section>
+
+<section class="player-section">
+<div class="player" id="playerContainer"></div>
+</section>
+
+<section class="recommendations" id="recommendationsSection">
+<h2>Similares a esto</h2>
+<div id="recommendations" class="recommendations-grid"></div>
+</section>
+</div>
+
+<script>
+const BLOG_ID="5683541567308872996";
+const BLOGGER_KEY="AIzaSyCAvJmJljHNtxtP1GFairfwktCj71nSt1Q";
+const TMDB_KEY="686e8f50b2135e3c32f670ec018df888";
+const BASE_URL="https://api.themoviedb.org/3";
+
+const GENRES={
+28:"Acción",12:"Aventura",16:"Animación",35:"Comedia",80:"Crimen",
+99:"Documental",18:"Drama",10751:"Familia",14:"Fantasía",36:"Historia",
+27:"Terror",10402:"Música",9648:"Misterio",10749:"Romance",878:"Ciencia Ficción",
+53:"Suspenso",10752:"Guerra",37:"Western",10765:"Sci-Fi & Fantasy",
+10759:"Action & Adventure"
+};
+
+let CURRENT_ITEM=null;
+
+async function init(){
+const heroBg=document.getElementById("heroBg");
+const poster=document.getElementById("poster");
+const title=document.getElementById("title");
+const overview=document.getElementById("overview");
+const meta=document.getElementById("meta");
+const genres=document.getElementById("genres");
+const playBtn=document.getElementById("playBtn");
+const seasonSelector=document.getElementById("seasonSelector");
+const episodeSelector=document.getElementById("episodeSelector");
+const playerContainer=document.getElementById("playerContainer");
+const recommendations=document.getElementById("recommendations");
+const recommendationsSection=document.getElementById("recommendationsSection");
+
+const selected=JSON.parse(localStorage.getItem("selectedContent"));
+
+if(selected && selected.id != null) selected.id=String(selected.id);
+
+if(!selected){
+document.getElementById("loading").innerHTML="No hay contenido seleccionado";
+return;
+}
+
+try{
+await loadFromBlogger(selected.id,selected.type);
+}catch(e){
+console.log("Blogger falló",e);
+await loadFromTMDB(selected.id,selected.type);
+}
+}
+async function loadFromBlogger(id, type) {
+  const selectedId = String(id);
+  const catalog = [];
+  const vistos = new Set();
+
+  let pageToken = "";
+
+  try {
+    do {
+      const params = new URLSearchParams({
+        key: BLOGGER_KEY,
+        maxResults: "100",
+        fetchBodies: "true"
+      });
+
+      if (pageToken) {
+        params.set("pageToken", pageToken);
+      }
+
+      const response = await fetch(
+        `https://www.googleapis.com/blogger/v3/blogs/${BLOG_ID}/posts?${params}`
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Error de Blogger: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      for (const post of data.items || []) {
+        if (!post.content) continue;
+
+        const doc = new DOMParser().parseFromString(
+          post.content,
+          "text/html"
+        );
+
+        /*
+         * Compatibilidad con las entradas originales
+         * catalogo-json y series-json.
+         */
+        const elementos = [
+          doc.getElementById("catalogo-data"),
+          doc.getElementById("series-data")
+        ].filter(Boolean);
+
+        /*
+         * También buscar datos JSON en otras entradas,
+         * incluidas las que contienen un único anime.
+         */
+        doc.querySelectorAll("pre, script, code").forEach(el => {
+          if (!elementos.includes(el)) {
+            elementos.push(el);
+          }
+        });
+
+        for (const elemento of elementos) {
+          const texto = elemento.textContent.trim();
+
+          if (!texto || texto[0] !== "[") continue;
+
+          let datos;
+
+          try {
+            datos = JSON.parse(texto);
+          } catch (error) {
+            console.warn(
+              "JSON no válido en la entrada:",
+              post.title,
+              error
+            );
+            continue;
+          }
+
+          if (!Array.isArray(datos)) continue;
+
+          for (const item of datos) {
+            if (
+              !item ||
+              item.id == null ||
+              !item.type ||
+              !["movie", "tv"].includes(item.type)
+            ) {
+              continue;
+            }
+
+            const clave = `${item.type}_${item.id}`;
+
+            /*
+             * Evitar duplicados si el mismo contenido
+             * aparece en el catálogo original y en otra entrada.
+             */
+            if (!vistos.has(clave)) {
+              vistos.add(clave);
+              catalog.push(item);
+            }
+          }
+        }
+      }
+
+      pageToken = data.nextPageToken || "";
+
+    } while (pageToken);
+
+    /*
+     * Buscar por ID y tipo, independientemente de
+     * la entrada de Blogger donde esté guardado.
+     */
+    const item = catalog.find(x =>
+      String(x.id) === selectedId &&
+      String(x.type) === String(type)
+    );
+
+    if (!item) {
+      console.error("Contenido no encontrado", {
+        idBuscado: selectedId,
+        tipoBuscado: type,
+        contenidosEncontrados: catalog.length
+      });
+
+      throw new Error(
+        `No se encontró el contenido ${selectedId} (${type}) en las entradas de Blogger.`
+      );
+    }
+
+    CURRENT_ITEM = item;
+
+    renderItem(item);
+    renderRecommendations(catalog, item);
+
+  } catch (error) {
+    console.error("Error al cargar desde Blogger:", error);
+    throw error;
+  }
+}
+
+
+async function loadFromTMDB(id,type){
+const res=await fetch(`${BASE_URL}/${type}/${id}?api_key=${TMDB_KEY}&language=es-ES`);
+const item=await res.json();
+renderTMDB(item,type);
+}
+
+function renderItem(item){
+document.getElementById("loading").style.display="none";
+document.getElementById("detailPage").style.display="block";
+
+heroBg.style.backgroundImage=`url('${item.backdrop}')`;
+poster.src=item.poster;
+title.textContent=item.title;
+overview.textContent=item.overview;
+
+meta.innerHTML=`
+<span>${item.type==="tv"?"Serie":"Película"}</span>
+<span>${item.runtime}</span>
+<span>${item.year}</span>
+<span>⭐ ${item.rating}</span>
+`;
+
+genres.innerHTML=(item.genres||[]).map(id=>`<span>${GENRES[id]||id}</span>`).join("");
+
+if(item.type==="movie" && item.videoUrl){
+playBtn.onclick=()=>{loadPlayer(item.videoUrl);};
+}
+
+if(item.type==="tv" && item.seasons){
+buildSeasons(item.seasons);
+}
+
+const currentItem={
+id:item.id,
+title:item.title,
+poster:item.poster,
+type:item.type
+};
+
+document.getElementById("favoriteBtn").onclick=()=>{toggleFavorite(currentItem);};
+updateFavoriteButton(item.id);
+}
+
+function buildSeasons(seasons){
+seasonSelector.style.display="block";
+episodeSelector.style.display="block";
+seasonSelector.innerHTML="";
+episodeSelector.selectedIndex=0;
+
+seasons.forEach(season=>{
+seasonSelector.innerHTML+=`
+<option value="${season.season}">
+Temporada ${season.season}
+</option>`;
+});
+
+loadSeason(1);
+
+seasonSelector.onchange=()=>{
+loadSeason(seasonSelector.value);
+};
+}
+
+function loadSeason(seasonNumber){
+const season=CURRENT_ITEM.seasons.find(s=>Number(s.season)===Number(seasonNumber));
+
+episodeSelector.innerHTML=`
+<option value="">
+Selecciona un capítulo
+</option>`;
+
+season.episodes.forEach(ep=>{
+episodeSelector.innerHTML+=`
+<option value="${ep.episode}">
+${ep.episode}. ${ep.title}
+</option>`;
+});
+
+episodeSelector.onchange=()=>{
+const ep=season.episodes.find(e=>Number(e.episode)===Number(episodeSelector.value));
+
+if(ep?.videoUrl){
+const episodeData={...ep,season:Number(seasonNumber)};
+loadPlayer(ep.videoUrl,episodeData);
+}
+};
+}
+
+function loadPlayer(url,episodeData=null){
+
+/* GUARDAR VIDEO */
+localStorage.setItem("videoURL",url);
+
+/* NUEVO: PASAR EL PÓSTER DE TMDB AL REPRODUCTOR */
+if(CURRENT_ITEM && CURRENT_ITEM.poster){
+localStorage.setItem("posterURL",CURRENT_ITEM.poster);
+}else{
+localStorage.removeItem("posterURL");
+}
+
+/* PELÍCULA */
+if(!episodeData){
+localStorage.setItem("tipoContenido","pelicula");
+
+localStorage.removeItem("serieId");
+localStorage.removeItem("serieData");
+localStorage.removeItem("temporadaActual");
+localStorage.removeItem("episodioActual");
+localStorage.removeItem("siguienteURL");
+localStorage.removeItem("siguienteTitulo");
+localStorage.removeItem("siguienteTemporada");
+localStorage.removeItem("siguienteEpisodio");
+
+location.href="go:player";
+return;
+}
+
+/* SERIE / CONTENIDO EPISÓDICO */
+localStorage.setItem("serieData",JSON.stringify(CURRENT_ITEM));
+localStorage.setItem("serieId",String(CURRENT_ITEM.id));
+localStorage.setItem("temporadaActual",String(episodeData.season));
+localStorage.setItem("episodioActual",String(episodeData.episode));
+localStorage.setItem("tipoContenido","episodico");
+
+const siguiente=obtenerSiguienteEpisodio(episodeData.season,episodeData.episode);
+
+if(siguiente){
+localStorage.setItem("siguienteURL",siguiente.videoUrl);
+localStorage.setItem("siguienteTitulo",siguiente.title||`Episodio ${siguiente.episode}`);
+localStorage.setItem("siguienteTemporada",String(siguiente.season));
+localStorage.setItem("siguienteEpisodio",String(siguiente.episode));
+}else{
+localStorage.removeItem("siguienteURL");
+localStorage.removeItem("siguienteTitulo");
+localStorage.removeItem("siguienteTemporada");
+localStorage.removeItem("siguienteEpisodio");
+}
+
+location.href="go:player";
+}
+
+function obtenerSiguienteEpisodio(temporadaActual,episodioActual){
+if(!CURRENT_ITEM || !CURRENT_ITEM.seasons)return null;
+
+const temporadas=CURRENT_ITEM.seasons.slice().sort((a,b)=>Number(a.season)-Number(b.season));
+
+const indiceTemporada=temporadas.findIndex(s=>Number(s.season)===Number(temporadaActual));
+if(indiceTemporada===-1)return null;
+
+const temporada=temporadas[indiceTemporada];
+
+const episodios=(temporada.episodes||[]).slice().sort((a,b)=>Number(a.episode)-Number(b.episode));
+
+const indiceEpisodio=episodios.findIndex(ep=>Number(ep.episode)===Number(episodioActual));
+if(indiceEpisodio===-1)return null;
+
+if(indiceEpisodio+1<episodios.length){
+const siguiente=episodios[indiceEpisodio+1];
+if(siguiente.videoUrl){
+return {...siguiente,season:temporada.season};
+}
+}
+
+if(indiceTemporada+1<temporadas.length){
+const siguienteTemporada=temporadas[indiceTemporada+1];
+
+const siguientesEpisodios=(siguienteTemporada.episodes||[]).slice().sort(
+(a,b)=>Number(a.episode)-Number(b.episode)
+);
+
+const primerEpisodio=siguientesEpisodios.find(ep=>ep.videoUrl);
+
+if(primerEpisodio){
+return {...primerEpisodio,season:siguienteTemporada.season};
+}
+}
+
+return null;
+}
+
+function renderRecommendations(catalog,item){
+
+const similares=catalog
+.filter(x=>
+x.id!==item.id &&
+Array.isArray(x.genres) &&
+Array.isArray(item.genres) &&
+x.genres.length>0 &&
+item.genres.length>0
+)
+.map(x=>{
+
+// Géneros que ambos comparten
+const generosCompartidos=x.genres.filter(g=>
+item.genres.includes(g)
+);
+
+// Cantidad de géneros compartidos
+const cantidadCompartidos=generosCompartidos.length;
+
+// Porcentaje de coincidencia respecto al contenido actual
+const porcentajeCoincidencia=
+cantidadCompartidos / item.genres.length;
+
+// ¿Tiene exactamente los mismos géneros?
+const mismosGeneros=
+cantidadCompartidos===item.genres.length &&
+x.genres.length===item.genres.length;
+
+return{
+...x,
+cantidadCompartidos,
+porcentajeCoincidencia,
+mismosGeneros
+};
+
+})
+// Eliminar los que no comparten ningún género
+.filter(x=>x.cantidadCompartidos>0)
+
+.sort((a,b)=>{
+
+// 1. Primero los que tienen exactamente los mismos géneros
+if(a.mismosGeneros && !b.mismosGeneros)return -1;
+if(!a.mismosGeneros && b.mismosGeneros)return 1;
+
+// 2. Después por porcentaje de coincidencia
+if(b.porcentajeCoincidencia!==a.porcentajeCoincidencia){
+return b.porcentajeCoincidencia-a.porcentajeCoincidencia;
+}
+
+// 3. Si empatan, gana el que comparte más géneros
+if(b.cantidadCompartidos!==a.cantidadCompartidos){
+return b.cantidadCompartidos-a.cantidadCompartidos;
+}
+
+// 4. Si todavía empatan, dejamos el orden original
+return 0;
+
+})
+.slice(0,12);
+
+if(!similares.length){
+recommendationsSection.style.display="none";
+return;
+}
+
+recommendationsSection.style.display="block";
+
+recommendations.innerHTML=similares.map(sim=>`
+<a href="go:detalle"
+class="rec-card"
+onclick='localStorage.setItem("selectedContent",JSON.stringify({
+id:${sim.id},
+type:"${sim.type}"
+}))'>
+
+<img src="${sim.poster}">
+
+<span>${sim.title}</span>
+
+</a>
+`).join("");
+
+}
+
+
+function renderTMDB(item,type){
+document.getElementById("loading").style.display="none";
+document.getElementById("detailPage").style.display="block";
+
+const backdropURL=item.backdrop_path
+?`https://image.tmdb.org/t/p/original${item.backdrop_path}`:"";
+
+const posterURL=item.poster_path
+?`https://image.tmdb.org/t/p/w500${item.poster_path}`:"";
+
+heroBg.style.backgroundImage=`url('${backdropURL}')`;
+poster.src=posterURL;
+title.textContent=item.title||item.name;
+overview.textContent=item.overview;
+recommendationsSection.style.display="none";
+playBtn.style.display="none";
+
+const currentItem={
+id:item.id,
+title:item.title||item.name,
+poster:posterURL,
+type:type
+};
+
+document.getElementById("favoriteBtn").onclick=()=>{toggleFavorite(currentItem);};
+updateFavoriteButton(item.id);
+}
+
+document.addEventListener("DOMContentLoaded",init);
+
+/* FAVORITOS */
+function getFavorites(){
+return JSON.parse(localStorage.getItem("favorites"))||[];
+}
+
+function saveFavorites(favorites){
+localStorage.setItem("favorites",JSON.stringify(favorites));
+}
+
+function isFavorite(id){
+return getFavorites().some(item=>item.id==id);
+}
+
+function toggleFavorite(item){
+let favorites=getFavorites();
+const index=favorites.findIndex(fav=>fav.id==item.id);
+
+if(index>-1){
+favorites.splice(index,1);
+}else{
+favorites.push(item);
+}
+
+saveFavorites(favorites);
+updateFavoriteButton(item.id);
+}
+
+function updateFavoriteButton(id){
+const btn=document.getElementById("favoriteBtn");
+if(!btn)return;
+
+if(isFavorite(id)){
+btn.innerHTML="❤️ En Mi Lista";
+}else{
+btn.innerHTML="🤍 Agregar a Mi Lista";
+}
+}
+</script>
+
+</body>
+</html>

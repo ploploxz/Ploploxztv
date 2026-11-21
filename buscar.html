@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Buscar - Ploploxz</title>
+
+<link
+href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+rel="stylesheet">
+
+<style>
+
+/* PEGA AQUÍ TODO EL CSS */
+
+body{
+  background:#141414;
+  color:white;
+  font-family:'Poppins',sans-serif;
+}
+
+.header{
+  position:sticky;
+  top:0;
+  z-index:1000;
+  background:#141414;
+  padding:20px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+.search-box{
+  padding:20px;
+}
+
+.search-box input{
+  width:100%;
+  padding:15px;
+  border:none;
+  border-radius:12px;
+  background:#222;
+  color:white;
+  font-size:16px;
+  outline:none;
+}
+
+.grid{
+  padding:20px;
+  display:grid;
+  grid-template-columns:
+  repeat(auto-fill,minmax(110px,1fr));
+  gap:15px;
+}
+
+.card{
+  text-decoration:none;
+  color:white;
+}
+
+.card img{
+  width:100%;
+  aspect-ratio:2/3;
+  object-fit:cover;
+  border-radius:10px;
+}
+
+.card span{
+  display:block;
+  margin-top:6px;
+  text-align:center;
+  font-size:13px;
+}
+
+.empty{
+  padding:40px;
+  text-align:center;
+  opacity:.7;
+}
+
+</style>
+
+</head>
+
+<body>
+<header class="header">
+  <h1>🔍 Buscar</h1>
+</header>
+
+<div class="search-box">
+  <input
+    type="text"
+    id="searchInput"
+    placeholder="Buscar películas, series o anime..."
+  >
+</div>
+
+<div id="results" class="grid"></div>
+
+<script>
+
+const BLOG_ID =
+"5683541567308872996";
+
+const API_KEY =
+"AIzaSyCAvJmJljHNtxtP1GFairfwktCj71nSt1Q";
+
+const GENRES = {
+  28:"Acción",
+  12:"Aventura",
+  16:"Animación",
+  35:"Comedia",
+  80:"Crimen",
+  99:"Documental",
+  18:"Drama",
+  10751:"Familia",
+  14:"Fantasía",
+  36:"Historia",
+  27:"Terror",
+  10402:"Música",
+  9648:"Misterio",
+  10749:"Romance",
+  878:"Ciencia Ficción",
+  10770:"TV Movie",
+  53:"Suspenso",
+  10752:"Guerra",
+  37:"Western"
+};
+
+let catalog = [];
+
+async function loadCatalog() {
+const container = document.getElementById("results");
+
+container.innerHTML = '<div class="empty">Cargando catálogo de Ploploxz...</div>';
+
+try {
+const contenidos = [];
+const vistos = new Set();
+let pageToken = "";
+
+// Leer todas las páginas de entradas publicadas en Blogger.
+do {
+  const params = new URLSearchParams({
+    key: API_KEY,
+    maxResults: "100",
+    fetchBodies: "true"
+  });
+
+  if (pageToken) {
+    params.set("pageToken", pageToken);
+  }
+
+  const response = await fetch(
+    `https://www.googleapis.com/blogger/v3/blogs/${BLOG_ID}/posts?${params}`
+  );
+
+  if (!response.ok) {
+    throw new Error(`Blogger respondió con error ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  for (const post of data.items || []) {
+    if (!post.content) continue;
+
+    const doc = new DOMParser().parseFromString(
+      post.content,
+      "text/html"
+    );
+
+    const elementos = [];
+
+    // Catálogos originales.
+    doc.querySelectorAll(
+      "#catalogo-data, #series-data"
+    ).forEach(el => elementos.push(el));
+
+    // Entradas nuevas con JSON.
+    doc.querySelectorAll("pre, script, code").forEach(el => {
+      if (!elementos.includes(el)) {
+        elementos.push(el);
+      }
+    });
+
+    for (const elemento of elementos) {
+      const texto = elemento.textContent.trim();
+
+      if (!texto.startsWith("[")) continue;
+
+      let lista;
+
+      try {
+        lista = JSON.parse(texto);
+      } catch (error) {
+        console.warn(
+          "JSON no válido en la entrada:",
+          post.title,
+          error
+        );
+        continue;
+      }
+
+      if (!Array.isArray(lista)) continue;
+
+      for (const item of lista) {
+        if (
+          !item ||
+          item.id == null ||
+          !["movie", "tv"].includes(item.type)
+        ) {
+          continue;
+        }
+
+        const clave = `${item.type}_${item.id}`;
+
+        // Evitar duplicados entre entradas.
+        if (vistos.has(clave)) continue;
+
+        vistos.add(clave);
+        contenidos.push(item);
+      }
+    }
+  }
+
+  pageToken = data.nextPageToken || "";
+
+} while (pageToken);
+
+catalog = contenidos;
+
+if (!catalog.length) {
+  throw new Error("No se encontraron contenidos en las entradas.");
+}
+
+console.log(
+  "Buscador: contenidos cargados:",
+  catalog.length
+);
+
+showRecent();
+
+} catch (error) {
+console.error("Error cargando el buscador:", error);
+
+container.innerHTML = `
+  <div class="empty">
+    No se pudo cargar el catálogo.<br>
+    ${error.message}
+  </div>
+`;
+
+}
+}
+
+function showRecent(){
+
+  const recentItems =
+    [...catalog]
+    .filter(item => item.created)
+    .sort(
+      (a,b)=>
+      new Date(b.created)
+      -
+      new Date(a.created)
+    )
+    .slice(0,30);
+
+  renderResults(recentItems);
+
+}
+
+function searchCatalog(query){
+
+  query =
+    query
+    .toLowerCase()
+    .trim();
+
+  if(!query){
+
+    showRecent();
+    return;
+
+  }
+
+  const results =
+    catalog.filter(item => {
+
+      const title =
+        item.title
+        .toLowerCase();
+
+      const genres =
+        (item.genres || [])
+        .map(id =>
+          GENRES[id] || ""
+        )
+        .join(" ")
+        .toLowerCase();
+
+      return (
+
+        title.includes(query)
+
+        ||
+
+        genres.includes(query)
+
+        ||
+
+        (
+          query === "anime"
+          &&
+          item.anime
+        )
+
+        ||
+
+        (
+          query === "pelicula"
+          &&
+          item.type === "movie"
+        )
+
+        ||
+
+        (
+          query === "serie"
+          &&
+          item.type === "tv"
+        )
+
+      );
+
+    });
+
+  renderResults(results);
+
+}
+
+function renderResults(items){
+
+  const container =
+    document.getElementById(
+      "results"
+    );
+
+  if(!items.length){
+
+    container.innerHTML =
+    `
+      <div class="empty">
+        No se encontraron resultados
+      </div>
+    `;
+
+    return;
+
+  }
+
+  container.innerHTML =
+    items.map(item => `
+    
+      <a
+        href="go:detalle"
+        class="card"
+
+        onclick='localStorage.setItem(
+          "selectedContent",
+          JSON.stringify({
+            id:${item.id},
+            type:"${item.type}"
+          })
+        )'
+      >
+
+        <img
+          src="${item.poster}"
+          alt="${item.title}"
+        >
+
+        <span>
+          ${item.title}
+        </span>
+
+      </a>
+
+    `).join("");
+
+}
+
+document
+.getElementById(
+  "searchInput"
+)
+.addEventListener(
+  "input",
+  e => searchCatalog(
+    e.target.value
+  )
+);
+
+document.addEventListener(
+  "DOMContentLoaded",
+  loadCatalog
+);
+
+</script>
+</body>
+
+</html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Donar - Ploploxz</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+
+/* AQUÍ VA TODO EL CSS */
+
+body{
+  background:#141414;
+  color:white;
+  font-family:Poppins,sans-serif;
+  margin:0;
+}
+
+.donation-page{
+  padding:25px;
+}
+
+body{
+  background:#141414;
+  color:white;
+  font-family:Poppins,sans-serif;
+}
+
+.donation-page{
+  padding:25px;
+}
+
+.donation-page h1{
+  text-align:center;
+  margin-bottom:15px;
+}
+
+.donation-page p{
+  text-align:center;
+  opacity:.8;
+}
+
+.donation-card{
+  background:#1f1f1f;
+  border-radius:12px;
+  padding:20px;
+  margin-top:20px;
+  text-align:center;
+}
+
+.donation-card h2{
+  color:#ffff;
+  margin-bottom:10px;
+}
+
+.donation-card a{
+  display:inline-block;
+  background:#e50914;
+  color:white;
+  text-decoration:none;
+  padding:10px 20px;
+  border-radius:8px;
+}
+.donation-card button{
+  background:#7d3cff;
+  color:white;
+  border:none;
+  padding:12px 20px;
+  border-radius:8px;
+  cursor:pointer;
+  margin:10px 0;
+}
+
+.qr-image{
+  width:220px;
+  max-width:100%;
+  border-radius:12px;
+  margin-top:15px;
+}
+.donation-card{
+  background:#1f1f1f;
+  padding:20px;
+  border-radius:12px;
+  margin-top:20px;
+  text-align:center;
+}
+.paypal-btn{
+  display:inline-block;
+  background:#0070ba !important;
+  color:white;
+  text-decoration:none;
+  padding:12px 20px;
+  border-radius:8px;
+  font-weight:600;
+}
+
+.paypal-btn:hover{
+  opacity:.9;
+}
+
+
+
+</style>
+</head>
+
+<body>
+
+<div class="donation-page">
+
+  <h1>❤️ Apoya Ploploxz</h1>
+
+  <p>
+    Tu apoyo ayuda a mantener los servidores,
+    el almacenamiento y las futuras mejoras
+    de la aplicación.
+  </p>
+
+  <div class="donation-card">
+
+    <h2>PayPal y tarjeta</h2>
+
+    <a href="https://www.paypal.com/ncp/payment/8WPB5CFCXH4VY"
+   class="paypal-btn">
+   💙 Donar con PayPal o tarjeta 
+</a>
+
+  </div>
+
+  <div class="donation-card">
+
+  <h2>💜 Nequi</h2>
+
+  <p>3218492153</p>
+
+  <button onclick="copiarNequi()">
+    Copiar número
+  </button>
+
+  <img
+    src="https://ploploxzdb.blogspot.com/2026/06/blog-post.html?m=1"
+    alt="QR Nequi"
+    class="qr-image"
+  >
+
+</div>
+
+<script>
+function copiarNequi(){
+
+  navigator.clipboard.writeText(
+    "3218492153"
+  );
+
+  alert(
+    "Número Nequi copiado correctamente."
+  );
+
+}
+</script>
+  <div class="donation-card">
+
+    <h2>Cuenta Bancaria</h2>
+
+    <p>Banco: Bancolombia</p>
+    <p>Tipo: Ahorros</p>
+    <p>Número: "numero"</p>
+
+  </div>
+
+</div>
+
+
+
+</body>
+</html>
