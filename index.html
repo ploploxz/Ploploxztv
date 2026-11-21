@@ -249,15 +249,15 @@ function createCard(item){
  const info=obtenerInfoCard(item);
  const selected=JSON.stringify({id:item.id,type:item.type}).replace(/</g,"\\u003c");
  const poster=escapeHTML(item.poster||item.backdrop||"https://via.placeholder.com/300x450/222/fff?text=Ploploxz");
- return `<a href="detalle.html⁠" class="card" onclick='localStorage.setItem("selectedContent",${JSON.stringify(selected)})'>
+ return `<a href="detalle.html" class="card" onclick='localStorage.setItem("selectedContent",${JSON.stringify(selected)})'>
  <img src="https://via.placeholder.com/300x450/222/fff?text=Ploploxz" data-src="${poster}" loading="lazy" alt="${escapeHTML(item.title)}">
  <span>${escapeHTML(item.title)}</span>
  <div class="card-info"><div class="card-type">${escapeHTML(info.type)}</div>${info.status?`<div class="card-status ${info.statusClass}">${info.status}</div>`:""}</div>
  </a>`;
 }
 function createSection(title,items,filtro=null){
- if(!items.length)return "";
- const verMas=filtro?`<a href="vermas.html⁠" class="see-more" onclick='localStorage.setItem("explorarFiltro",JSON.stringify(${JSON.stringify(filtro)}))'>Ver más</a>`:"";
+ if(!items.length)return ""; const verMas=filtro?`<a href="vermas.html" class="see-more"
+ onclick='localStorage.setItem("explorarFiltro",JSON.stringify(${JSON.stringify(filtro)}))'>Ver más</a>`:"";
  return `<section class="row-section"><h2 class="section-title"><span>${title}</span>${verMas}</h2><div class="row-posters">${items.slice(0,10).map(createCard).join("")}</div></section>`;
 }
 function buildContinueWatching(catalog,series){
@@ -324,11 +324,12 @@ function buildHero(catalog){
  document.getElementById("hero-description").textContent=featured.overview||"Disponible ahora en Ploplox";
  document.getElementById("hero-play").onclick=()=>{
   localStorage.setItem("selectedContent",JSON.stringify({id:featured.id,type:featured.type}));
-  location.href="detalle.html⁠";
+  location.href="detalle.html";
  };
 }
-document.getElementById("donate-btn").onclick=()=>location.href="donar.html⁠";
-document.getElementById("favorites-btn").onclick=()=>location.href="favoritos.html⁠";
+document.getElementById("donate-btn").onclick=()=>location.href="donar.html";
+
+document.getElementById("favorites-btn").onclick=()=>location.href="favoritos.html";
 function lazyImages(){
  const images=document.querySelectorAll("img[data-src]");
  if(!("IntersectionObserver" in window)){images.forEach(img=>{img.src=img.dataset.src;img.removeAttribute("data-src");});return;}
