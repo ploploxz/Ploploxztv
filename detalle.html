@@ -377,7 +377,7 @@ localStorage.removeItem("siguienteTitulo");
 localStorage.removeItem("siguienteTemporada");
 localStorage.removeItem("siguienteEpisodio");
 
-location.href="go:player";
+location.href="player.html";
 return;
 }
 
@@ -402,7 +402,7 @@ localStorage.removeItem("siguienteTemporada");
 localStorage.removeItem("siguienteEpisodio");
 }
 
-location.href="go:player";
+location.href="player.html";
 }
 
 function obtenerSiguienteEpisodio(temporadaActual,episodioActual){
@@ -514,7 +514,7 @@ return;
 recommendationsSection.style.display="block";
 
 recommendations.innerHTML=similares.map(sim=>`
-<a href="go:detalle"
+<a href="detalle.html"
 class="rec-card"
 onclick='localStorage.setItem("selectedContent",JSON.stringify({
 id:${sim.id},
