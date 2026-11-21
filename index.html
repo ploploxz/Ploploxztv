@@ -324,7 +324,7 @@ function buildHero(catalog){
  document.getElementById("hero-description").textContent=featured.overview||"Disponible ahora en Ploplox";
  document.getElementById("hero-play").onclick=()=>{
   localStorage.setItem("selectedContent",JSON.stringify({id:featured.id,type:featured.type}));
-  location.href="detalle.html";
+alert(new URL("detalle.html", location.href).href);
  };
 }
 document.getElementById("donate-btn").onclick=()=>location.href="donar.html";
