@@ -1123,17 +1123,57 @@ volume.oninput=function(){
 };
 
 /* =====================================================
-   PANTALLA COMPLETA
+   PANTALLA COMPLETA + ORIENTACIÓN HORIZONTAL
    ===================================================== */
 
-fullscreen.onclick=function(){
- if(!document.fullscreenElement){
-  player.requestFullscreen?.().catch(error=>console.log(error));
- }else{
-  document.exitFullscreen?.();
+fullscreen.onclick=async function(){
+
+ try{
+
+  if(!document.fullscreenElement){
+
+   await player.requestFullscreen();
+
+   if(screen.orientation && screen.orientation.lock){
+    await screen.orientation.lock("landscape");
+   }
+
+  }else{
+
+   await document.exitFullscreen();
+
+  }
+
+ }catch(error){
+  console.log("No se pudo cambiar la orientación:",error);
  }
+
 };
 
+/* Detectar cuando se sale de pantalla completa */
+document.addEventListener("fullscreenchange",async()=>{
+
+ if(document.fullscreenElement){
+
+  try{
+   if(screen.orientation && screen.orientation.lock){
+    await screen.orientation.lock("landscape");
+   }
+  }catch(error){
+   console.log("Bloqueo horizontal no disponible:",error);
+  }
+
+ }else{
+
+  try{
+   if(screen.orientation && screen.orientation.unlock){
+    screen.orientation.unlock();
+   }
+  }catch(error){}
+
+ }
+
+});
 /* =====================================================
    CONTROLES
    ===================================================== */
