@@ -1,0 +1,12 @@
+
+{
+  "name": "PloploxzTV",
+  "short_name": "Ploploxz",
+  "description": "Tu plataforma de anime y entretenimiento.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#141414",
+  "theme_color": "#141414"
+}
