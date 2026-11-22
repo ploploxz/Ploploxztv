@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.ploploxz.twa",
+        "sha256_cert_fingerprints": ["DF:03:48:8A:D4:9F:FE:59:0A:F3:38:65:82:52:07:33:99:EF:11:94:64:0B:21:88:3F:A0:1B:A9:4C:AA:18:72"]
+      }
+    }]
